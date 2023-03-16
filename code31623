@@ -1,0 +1,48 @@
+library(readxl)
+Weed_Data <- read_excel("Desktop/Econ503/Marijuana_Data.xlsx")
+View(Weed_Data)
+
+    #Creating Dummy Variables for Race. Only the races which actually had representation are included. Races with no arrests were ommited. 
+Weed_Data$Hispanic <- ifelse(Weed_Data$'Descent Code'== "H", 1,0)
+Weed_Data$White <- ifelse(Weed_Data$'Descent Code'== "W",1,0)
+Weed_Data$Black <- ifelse(Weed_Data$'Descent Code'== "B",1,0)
+Weed_Data$Other_Asian <- ifelse(Weed_Data$'Descent Code'== "A",1,0)
+Weed_Data$Chinese <- ifelse(Weed_Data$'Descent Code'== "C",1,0)
+Weed_Data$Filipino <- ifelse(Weed_Data$'Descent Code'== "F",1,0)
+Weed_Data$NativeAmerican <- ifelse(Weed_Data$'Descent Code'== "I",1,0)
+Weed_Data$Japanese <- ifelse(Weed_Data$'Descent Code'== "J",1,0)
+Weed_Data$Korean <- ifelse(Weed_Data$'Descent Code'== "K",1,0)
+Weed_Data$Other <- ifelse(Weed_Data$'Descent Code'== "O",1,0)
+Weed_Data$Pacific_Islander <- ifelse(Weed_Data$'Descent Code'== "P",1,0)
+Weed_Data$Unknown <- ifelse(Weed_Data$'Descent Code'== "X",1,0)
+Weed_Data$Asian_Indian <- ifelse(Weed_Data$'Descent Code'== "I",1,0)
+Weed_Data$Guamanian <- ifelse(Weed_Data$'Descent Code'== "W",1,0)
+
+    #Dummy Variable for Sex
+
+Weed_Data$Male <- ifelse(Weed_Data$'Sex Code'== "M",1,0)
+Weed_Data$Female <- ifelse(Weed_Data$'Sex Code'== "F",1,0)
+
+    #Dummy Variable for Age just as an example will need to see how to refine this categorization. 
+
+Weed_Data$Under18 <-ifelse(Weed_Data$'Age'<= "18",1,0)
+Weed_Data$WorkingAge <- ifelse(Weed_Data$'Age' > 18 & Weed_Data$'Age' < 65, 1,0)
+Weed_Data$RetirementAge <- ifelse(Weed_Data$'Age' >= 65, 1, 0)
+
+      #CLeaning the data to remove unusable data here I am removing Arrest type code, Charge group description, Charge description and Charge. 
+#     We can always go back and keep these if we woud like but I see no reason as to why include them. 
+
+Weed_Data<-select(Weed_Data, -Charge_Group_Descirption)
+Weed_Data_Clean <-Weed_Data[,-7:-12]
+print(Weed_Data_Clean)
+
+    #Lets print this excel file that we manipulated in R and compare it to the Excel fiel we did by hand.
+    #  Doing it in R saved us hours. This package will aparaently help us export the excel file.
+
+install.packages("writexl")
+
+library("writexl")
+
+write_xlsx(the dataframe name,"path to store the Excel file\\file name.xlsx") try this ondesktop 
+
+
