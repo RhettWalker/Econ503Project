@@ -1,0 +1,204 @@
+library(readxl)
+Weed_Data <- read_xlsx("Desktop/Econ503/Marijuana_Data.xlsx")
+View(Weed_Data)
+
+#Creating Dummy Variables for Race. Only the races which actually had representation are included. Races with no arrests were ommited. 
+Weed_Data$Hispanic <- ifelse(Weed_Data$'Descent Code'== "H", 1,0)
+Weed_Data$White <- ifelse(Weed_Data$'Descent Code'== "W",1,0)
+Weed_Data$Black <- ifelse(Weed_Data$'Descent Code'== "B",1,0)
+Weed_Data$Other_Asian <- ifelse(Weed_Data$'Descent Code'== "A",1,0)
+Weed_Data$Chinese <- ifelse(Weed_Data$'Descent Code'== "C",1,0)
+Weed_Data$Filipino <- ifelse(Weed_Data$'Descent Code'== "F",1,0)
+Weed_Data$NativeAmerican <- ifelse(Weed_Data$'Descent Code'== "I",1,0)
+Weed_Data$Japanese <- ifelse(Weed_Data$'Descent Code'== "J",1,0)
+Weed_Data$Korean <- ifelse(Weed_Data$'Descent Code'== "K",1,0)
+Weed_Data$Other <- ifelse(Weed_Data$'Descent Code'== "O",1,0)
+Weed_Data$Pacific_Islander <- ifelse(Weed_Data$'Descent Code'== "P",1,0)
+Weed_Data$Unknown <- ifelse(Weed_Data$'Descent Code'== "X",1,0)
+Weed_Data$Asian_Indian <- ifelse(Weed_Data$'Descent Code'== "I",1,0)
+Weed_Data$Guamanian <- ifelse(Weed_Data$'Descent Code'== "W",1,0)
+#Dummy Variable for Sex
+Weed_Data$MSex <- ifelse(Weed_Data$'Sex Code'== "M",1,0)
+
+
+#Dummy Variable for Age just as an example will need to see how to refine this categorization. 
+Weed_Data$Under18 <-ifelse(Weed_Data$'Age'<= "18",1,0)
+Weed_Data$WorkingAge <- ifelse(Weed_Data$'Age' > 18 & Weed_Data$'Age' < 65, 1,0)
+Weed_Data$RetirementAge <- ifelse(Weed_Data$'Age' >= 65, 1, 0)
+
+#CLeaning the data to remove unusable data here I am removing Arrest type code, Charge group description, Charge description and Charge. 
+# We can always go back and keep these if we woud like but I see no reason as to why include them. 
+
+Weed_Data_Clean <-Weed_Data[,-7:-12]
+Weed_Data_Cleaner <- Weed_Data_Clean[,-1]
+View(Weed_Data_Cleaner)
+
+ #Lets print this excel file that we manipulated in R and compare it to the Excel fiel we did by hand.
+#  Doing it in R saved us hours. This package will aparaently help us export the excel file.
+install.packages("writexl")
+library("writexl")
+write_xlsx(the dataframe name,"path to store the Excel file\\file name.xlsx") try this ondesktop 
+
+#We will add a column for every arrest where the value is 1. This is to make it easier to count the # of arrests per day.
+
+Weed_Data_Cleaner["Arrests"] <- c(1)
+View(Weed_Data_Cleaner)
+
+#As you can see we have a column of 1's on the far right side, Now I would like to rearrange my new data table in a way that is easier to look at 
+
+Weed_Data_Cleaner2 <- Weed_Data_Cleaner[, c(1,24,2,3,4,22,23,24,5,20,21,6,7,8,9,10,11,12,13,14,15,16,17,18,19) ]
+View(Weed_Data_Cleaner2)
+
+#NOw we need to find out how to aggregate all the columns based on the date which they occured. Should be like 3652 observations once it is compiled
+
+
+
+CannabisData <- aggregate(x = Weed_Data_Cleaner2[c("Arrests","MSex","Under18", "WorkingAge", "RetirementAge", 
+                      "Hispanic","White","Black","Other_Asian","Chinese", "Filipino",
+                      "NativeAmerican","Japanese", "Korean", "Other", "Pacific_Islander","Unknown",                                                         
+                       "Asian_Indian", "Guamanian")],
+                     FUN = sum,
+                     by = list(date = Weed_Data_Cleaner2$'Arrest Date'))
+#Cleaned Data-set. 
+View(CannabisData)
+(CannabisData)
+
+#Now lets try and make vectors for our regression 
+#start simple
+
+Y <- CannabisData$Arrests 
+Hispanic <- CannabisData$Hispanic
+White <- CannabisData$White 
+Black <- CannabisData$Black
+Male <- CannabisData$Male
+Female <- CannabisData$Female 
+
+#Simple regressions as tests
+Y <- CannabisData$Arrests
+X1 <- White
+reg1 <- lm(Y ~ X1)
+summary(reg1)
+install.packages("data.table")
+library("data.table")
+plot(X1, Y, col = 'red', pch = 16, 
+     main = "GDP vs Urbanization", 
+     xlab = "Urbanization level", ylab = "Log GDP")
+abline(reg, lwd = 3)
+
+
+
+
+#LEts try ALLLL THAT again but with the data from all the arrests in the city. 
+
+library(readxl)
+LA_Arrests <- read.csv("Desktop/Econ503/Arrest.csv")
+View(LA_Arrests)
+
+#Using the Cannabis data, we can scan for all the unique values within the charge column. This will tell us how to identify the cannabis arrests
+View(Weed_Data)
+list(unique(Weed_Data$Charge))
+MCharges<-(unique(Weed_Data$Charge))
+#The Number of M chargers we got should hopefully match to the number of observations from our cannabis dataset. 
+LA_Arrests$CannabisArrests<- ifelse(LA_Arrests$'Charge' %in% c( "11357BHS", "11357HS","11357(B)HS", "11357(D)HS", "11357(A)HS", "23222(B)VC",
+  "11360(B)HS", "11357(C)HS", "11360HS",
+    "11357(E)HS", "11357(B)2HS",  "11358HS",
+     "11360(A)HS",  "11532HS", "11359HS",
+    "11358(A)HS" , "11362.3A1HS" , "11361HS",
+    "11359(B)HS" ,"11357.5AHS" , "11358(C)HS",
+   "11362.3A2HS", "11360(A)2HS", "11361(A)HS",
+  "11361(B)HS", "11357(E)1HS", "11360A3DHS"), 1,0)
+
+
+sum(LA_Arrests$CannabisArrest)
+View(LA_Arrests)
+
+View(LA_Arrests)
+
+#Here we can identify the race of each individual being arrested.
+LA_Arrests$Hispanic <- ifelse(LA_Arrests$'Descent.Code'== "H", 1,0)
+LA_Arrests$White <- ifelse(LA_Arrests$'Descent.Code'== "W",1,0)
+LA_Arrests$Black <- ifelse(LA_Arrests$'Descent.Code'== "B",1,0)
+LA_Arrests$Other_Asian <- ifelse(LA_Arrests$'Descent.Code'== "A",1,0)
+LA_Arrests$Chinese <- ifelse(LA_Arrests$'Descent.Code'== "C",1,0)
+LA_Arrests$Filipino <- ifelse(LA_Arrests$'Descent.Code'== "F",1,0)
+LA_Arrests$NativeAmerican <- ifelse(LA_Arrests$'Descent.Code'== "I",1,0)
+LA_Arrests$Japanese <- ifelse(LA_Arrests$'Descent.Code'== "J",1,0)
+LA_Arrests$Korean <- ifelse(LA_Arrests$'Descent.Code'== "K",1,0)
+LA_Arrests$Other <- ifelse(LA_Arrests$'Descent.Code'== "O",1,0)
+LA_Arrests$Pacific_Islander <- ifelse(LA_Arrests$'Descent.Code'== "P",1,0)
+LA_Arrests$Unknown <- ifelse(LA_Arrests$'Descent.Code'== "X",1,0)
+LA_Arrests$Asian_Indian <- ifelse(LA_Arrests$'Descent.Code'== "I",1,0)
+LA_Arrests$Guamanian <- ifelse(LA_Arrests$'Descent.Code'== "W",1,0)  
+
+LA_Arrests$SevSevStreet <- ifelse(LA_Arrests$'Area.Name' == "77th Street" , 1,0)
+LA_Arrests$Central <- ifelse(LA_Arrests$'Area.Name' == "Central",1,0)
+LA_Arrests$Devonshire <- ifelse(LA_Arrests$'Area.Name' == "Central" , 1,0)
+LA_Arrests$FootHIll <- ifelse(LA_Arrests$'Area.Name' == 'Foothill', 1,0)
+LA_Arrests$Harbor <- ifelse(LA_Arrests$'Area.Name' == 'Harbor', 1,0)
+LA_Arrests$HollenBeck <- ifelse(LA_Arrests$'Area.Name' == 'Hollenbeck', 1,0)
+LA_Arrests$Hollywood <- ifelse(LA_Arrests$'Area.Name' == 'Hollywood', 1,0)
+LA_Arrests$Mission <- ifelse(LA_Arrests$'Area.Name' == 'Mission', 1,0)
+LA_Arrests$NHollywood <- ifelse(LA_Arrests$'Area.Name' == 'North HollyWood',1,0)
+LA_Arrests$Newton <- ifelse(LA_Arrests$'Area.Name' == 'Newton',1,0)
+LA_Arrests$Northeast <- ifelse(LA_Arrests$'Area.Name' == 'Northeast',1,0)
+LA_Arrests$Olympic <- ifelse(LA_Arrests$'Area.Name' == 'Olympic',1,0)
+LA_Arrests$Pacific <- ifelse(LA_Arrests$'Area.Name' == 'Pacific',1,0)
+LA_Arrests$Rampart <- ifelse(LA_Arrests$'Area.Name' == 'Rampart',1,0)
+LA_Arrests$Southeast <- ifelse(LA_Arrests$'Area.Name' == 'Southeast',1,0)
+LA_Arrests$Southwest <- ifelse(LA_Arrests$'Area.Name' == ' Southwest',1,0)
+LA_Arrests$Topanga <- ifelse(LA_Arrests$'Area.Name' == ' Topanga', 1,0)
+LA_Arrests$VanNuys <- ifelse(LA_Arrests$'Area.Name' == 'Van Nuys',1,0)
+LA_Arrests$WestLA <- ifelse(LA_Arrests$'Area.Name' == 'West LA',1,0)
+LA_Arrests$WestValley <- ifelse(LA_Arrests$'Area.Name' == 'West Valley',1,0)
+LA_Arrests$Wilshire <- ifelse(LA_Arrests$'Area.Name' == 'Wilshire' , 1,0)
+
+###Checking how many unique neighborhoods they are. We can use an ifelse statement to help aggregate the number of arrests per neighborhood.
+count(unique(LA_Arrest_ClearReoder$`Area Name`))
+
+#Now using the list we can we start our ifelse statements. I could not find a way to match the neighborhood to its corresponding code>
+      #Nor could I find a good source online, I decided This owuld be the best way Basicaly treating each observation similair to a 
+        # dummy variable. However in the final regression I understand this will most likely not be the case. I still need a refresher on DUmmy variabes
+
+
+LA_Arrests$MALE <-  ifelse(LA_Arrests$'Sex.Code'== "M",1,0)
+LA_Arrests["Arrests"] <- c(1)
+View(LA_Arrests)
+LA_ArrestsReOrdered <- LA_Arrests[, c(1,2,12,15,16,17,18,19,20,21,22,4,8,23,24,25,26,27,28,29,5,6,9,11,14,31,13,30,10,
+                                      3,69,47,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46
+                                      ,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68)]
+View(LA_ArrestsReOrdered)
+LA_Arrest_ClearReoder <-LA_ArrestsReOrdered[,-1:-29]
+View(LA_Arrest_ClearReoder)
+#WE Finally made the data readable with the date on the left side and got ride of some columns to hopefully give our CPU some headspace.(IM CURRENTLY typing this on a old macbook air)
+#Now we should finally be able to aggregate everything 
+
+ArrestHighlightedCannabisData <- aggregate(x = LA_Arrest_ClearReoder[c("Arrests","CannabisArrests","MALE",
+                                                   "Hispanic","White","Black","Other_Asian","Chinese", "Filipino",
+                                                   "NativeAmerican","Japanese", "Korean", "Other", "Pacific_Islander","Unknown",                                                         
+                                                   "Asian_Indian", "Guamanian", "SevSevStreet.1","Central","Harbor","Devonshire","FootHIll", 
+                                                   "HollenBeck", "Hollywood", "NHollywood", "Northeast" , "Southeast", "Topanga" , "VanNuys",
+                                                   "WestValley", "Southwest", "WestLA", "Wilshire", "Mission", "Olympic","Pacific","Rampart","Newton","SevSevStreet"
+                                                   )],
+                          FUN = sum,
+                          by = list(date = LA_Arrest_ClearReoder$'Arrest.Date'))
+  
+
+View (ArrestHighlightedCannabisData)
+
+Arrests <- ArrestHighlightedCannabisData$Arrests 
+Hispanic <- ArrestHighlightedCannabisData$Hispanic
+White <- ArrestHighlightedCannabisData$White 
+Black <- ArrestHighlightedCannabisData$Black
+Male <- ArrestHighlightedCannabisData$Male
+Cannabis <- ArrestHighlightedCannabisData$Cannabis
+
+#Simple regressions as tests
+Y <- Arrests
+X1 <- Cannabis
+reg1 <- lm(Y ~ White)
+summary(reg1)
+
+plot(Black, Y, col = 'Black', pch = 16, 
+     main = "Arrests vs Hispanics", 
+     xlab = "White Arrests", ylab = "Cannabis Arrests",)
+abline(reg, lwd = 3)
